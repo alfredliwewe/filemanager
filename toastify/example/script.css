@@ -1,0 +1,55 @@
+.container {
+    overflow: hidden;
+    display: flex;
+    height: 100%;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    background-color: whitesmoke;
+    background-image: url("./pattern.png");
+}
+
+.hidden {
+    display: none;
+}
+
+.docs {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    background-color: white;
+    border: 1px solid #e3e3e3;
+    padding: 20px 20px;
+    width: 60%;
+    border-radius: 4px;
+}
+
+.docs h2 {
+    margin-top: 0px;
+}
+
+code p {
+    margin: 2px;
+}
+
+.pad-left {
+    padding-left: 20px;
+}
+
+.buttons {
+    margin: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.button:hover {
+    color: #FFFFFF;
+    background: linear-gradient(135deg, #73a5ff, #5477f5);
+    border: 1px solid transparent;
+}
+
+.repo {
+    margin: 10px;
+}
