@@ -26,7 +26,7 @@ $dir = isset($_GET['dir']) ? $_GET['dir'] : "";
 <body>
 <div></div>
 <pre id="editor"></pre>
-<script type="text/javascript" src="../vendor/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../resources/vendor/jquery/jquery.min.js"></script>
 <!-- load ace -->
 <script src="./src-noconflict/ace.js"></script>
 <!-- load ace language tools -->
@@ -44,7 +44,12 @@ $dir = isset($_GET['dir']) ? $_GET['dir'] : "";
     // trigger extension
     ace.require("ace/ext/language_tools");
     var editor = ace.edit("editor");
-    editor.session.setMode("ace/mode/"+ext);
+    if (ext == "md") {
+        editor.session.setMode("ace/mode/markdown");
+    }
+    else{
+        editor.session.setMode("ace/mode/"+ext);
+    }
     //editor.setTheme("ace/theme/monokai");
     // enable autocompletion and snippets
     editor.setOptions({

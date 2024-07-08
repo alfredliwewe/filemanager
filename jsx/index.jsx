@@ -706,7 +706,7 @@ function PreviewFile(props){
                         {["png", "jpeg", "jpg","webp","gif"].includes(active.extension) ? <div className="w3-center">
                             <img src={dir+active.name} width={"80%"} />
                         </div>:
-                        ["html", "css", "php","js","jsx", "xml","json","java", "ini", "htaccess","svg"].includes(active.extension) ? <Editor file={active.name} dir={dir} height={height} extension={active.extension} />:
+                        ["html", "css", "php","js","jsx", "xml","json","java", "ini", "htaccess","svg","md"].includes(active.extension) ? <Editor file={active.name} dir={dir} height={height} extension={active.extension} />:
                         <></>}
                     </div>
                 </div>
