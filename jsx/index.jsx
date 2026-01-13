@@ -1,14 +1,12 @@
-const {TextField, Button, Fab, Link, Typography, InputAdornment, Alert, Tabs, Tab} = MaterialUI;
-const {Box, Drawer, List, Divider, ListItem, ListItemButton, ListItemIcon, ListItemText, SvgIcon, createTheme, ThemeProvider} = MaterialUI;
-const {Dialog, DialogActions,DialogContent, DialogContentText, MenuItem, DialogTitle} = MaterialUI;
-let {alpha, TableBody, TableCell, TableContainer, RadioGroup, Radio, FormLabel,Rating, Table,
-    TableHead, TablePagination, TableRow, TableSortLabel, Toolbar, Paper, Checkbox, IconButton, Tooltip,
-    Chip, Avatar, FilledInput, FormControl, InputLabel, Breadcrumbs, Input, ListItemAvatar, 
-    FormControlLabel,Switch, DeleteIcon, FilterListIcon, visuallyHidden, OutlinedInput,
+const { TextField, Button, Fab, Link, Typography, InputAdornment, Alert, Tabs, Tab } = MaterialUI;
+const { Box, Drawer, List, Divider, ListItem, ListItemButton, ListItemIcon, ListItemText, SvgIcon, createTheme, ThemeProvider } = MaterialUI;
+const {
+    Dialog,
+    FormControl, OutlinedInput,
     FormHelperText
 } = MaterialUI;
 
-const {useState, useEffect, createContext, useContext, useLayoutEffect } = React;
+const { useState, useEffect, createContext, useContext, useLayoutEffect, useRef } = React;
 
 const SigninContext = createContext({})
 var Context = createContext({});
@@ -23,74 +21,158 @@ let theme = createTheme({
             main: '#edf2ff',
         },
     },
+    components: {
+        MuiButton: {
+            styleOverrides: {
+                root: {
+                    borderRadius: "64px",
+                    textTransform: "none",
+                    padding: "6px 24px"
+                }
+            },
+            defaultProps: {
+                variant: "contained"
+            }
+        },
+        MuiDialog: {
+            styleOverrides: {
+                root: {
+                    borderRadius: "24px",
+                    textTransform: "none",
+                },
+                paper: {
+                    borderRadius: "36px",
+                    backgroundColor: "#f8f1f6",
+                    padding: "24px 12px",
+                    boxShadow: "0px 1px 2px 0px rgb(0 0 0 / 30%), 0px 2px 6px 2px rgb(0 0 0 / 15%);",
+                    //border:"14px solid rgba(4, 25, 52, 0.32)",
+                    outline: "1px solid rgba(1, 7, 13, 0.32)"
+                }
+            },
+            defaultProps: {
+                elevation: 2
+            }
+        },
+        MuiDrawer: {
+            styleOverrides: {
+                paper: {
+                    //borderTopLeftRadius:"26px",
+                    //borderBottomLeftRadius:"26px",
+                    backgroundColor: "#f8f1f6",
+                    padding: "24px 12px",
+                    boxShadow: "0px 1px 2px 0px rgb(0 0 0 / 30%), 0px 2px 6px 2px rgb(0 0 0 / 15%)"
+                }
+            },
+            defaultProps: {
+                elevation: 2
+            }
+        },
+        MuiOutlinedInput: {
+            styleOverrides: {
+                root: {
+                    '& .MuiOutlinedInput-notchedOutline': {
+                        borderRadius: '8px',
+                    },
+                },
+            },
+        },
+        MuiLink: {
+            styleOverrides: {
+                root: {
+                    textDecoration: "none",
+                    fontFamily: "'Google Sans', Roboto, Arial, sans-serif",
+                    fontWeight: 600,
+                    textTransform: 'capitalize',
+                    //fontSize: '1.02rem',
+                    "&:hover": {
+                        textDecoration: "underline"
+                    }
+                }
+            }
+        }
+    }
 });
 
-window.onload = function(){
+function encode_to_base64(str) {
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (match, p1) {
+        return String.fromCharCode('0x' + p1);
+    }));
+}
+
+window.onload = function () {
     ReactDOM.render(<Index />, document.getElementById('root'));
 }
 
-function Index(){
-    const [files,setFiles] = useState([])
-    const [folders,setFolders] = useState([]);
-    const [dir,setDir] = useState("../../");
+function Index() {
+    const [files, setFiles] = useState([])
+    const [folders, setFolders] = useState([]);
+    const [dir, setDir] = useState("../../");
     const [parents, setParents] = useState([]);
-    const [done,setDone] = useState(false);
-    const [check,setCheck] = useState(false);
-    const [backFolders,setBackFolders] = useState([]);
+    const [done, setDone] = useState(false);
+    const [check, setCheck] = useState(false);
+    const [backFolders, setBackFolders] = useState([]);
     const [canExtract, setCanExtract] = useState(false);
-    const [active,setActive] = useState({
-        extension:""
+    const [active, setActive] = useState({
+        extension: ""
     });
-    const [open,setOpen] = useState({
-        newFile:false,
-        newFolder:false,
-        previewFile:false,
-        uploadFiles:false,
-        compressFiles:false,
-        delete:false,
-        extract:false
+    const [open, setOpen] = useState({
+        newFile: false,
+        newFolder: false,
+        previewFile: false,
+        uploadFiles: false,
+        uploadFolder: false,
+        compressFiles: false,
+        delete: false,
+        extract: false,
+        renameFile: false,
+        renameFolder: false,
+        copy: false,
+        cut: false,
+        lock: false,
     })
 
     const parentDir = "../../";
 
     const openDir = (dir) => {
-        $.get("api/", {openDir:dir}, function(response){
+        $.get("api/", {
+            openDir: encode_to_base64(dir)
+        }, function (response) {
             //alert(response);
-            try{
+            try {
                 let res = JSON.parse(response);
 
-                if(res.status){
-                    setFiles(res.files.map((r=>{
+                if (res.status) {
+                    setFiles(res.files.map((r => {
                         r.checked = false;
                         return r;
                     })));
-                    setFolders(res.folders.map((r=>{
+                    setFolders(res.folders.map((r => {
                         r.checked = false
                         return r;
                     })));
 
-                    if(!done){
+                    if (!done) {
                         setParents(res.folders);
                         setDone(true);
                     }
                 }
-                else{
+                else {
                     alert(res.message)
                 }
             }
-            catch(E){
-                alert(E.toString()+response);
+            catch (E) {
+                alert(E.toString() + response);
             }
         })
     }
 
     const shortenName = (name) => {
-        if(name.length < 30){
+        if (name.length < 30) {
             return name;
         }
-        else{
+        else {
             let chars = name.split(".");
-            name = name.substring(0,26)+"..."+chars[chars.length-1];
+            name = name.substring(0, 26) + "..." + chars[chars.length - 1];
             return name;
         }
     }
@@ -99,120 +181,122 @@ function Index(){
         return document.getElementById(id)
     }
 
-    useEffect(()=>{
+    useEffect(() => {
         //$('#bottom').height(window.innerHeight - $('#top').height())
-        $('#structure').css('height', (window.innerHeight - _('top').clientHeight)+"px")
-        $('#content').css('height', (window.innerHeight - _('top').clientHeight)+"px");
+        $('#structure').css('height', (window.innerHeight - _('top').clientHeight) + "px")
+        $('#content').css('height', (window.innerHeight - _('top').clientHeight) + "px");
     }, []);
 
-    useEffect(()=>{
+    useEffect(() => {
         const listener = (event) => {
             var receivedValue = event.data;
             console.log("Received value from iframe:", receivedValue);
-            if (typeof receivedValue == "string"){
-                try{
+            if (typeof receivedValue == "string") {
+                try {
                     let json = JSON.parse(receivedValue);
-                    if(json.type == "message"){
+                    if (json.type == "message") {
                         Toast(json.message);
                     }
-                    else{
+                    else {
                         //do nothing
                         console.log(json);
                     }
                 }
-                catch(E){
-                    alert(E.toString()+ receivedValue);
+                catch (E) {
+                    alert(E.toString() + receivedValue);
                 }
             }
         }
 
         window.addEventListener('message', listener);
 
-        return ()=>{
+        return () => {
             window.removeEventListener('message', listener);
         }
     }, []);
 
-    useEffect(()=>{
+    useEffect(() => {
         openDir(dir);
-        setBackFolders(dir.substring(0,dir.length-1).split("/"));
+        setBackFolders(dir.substring(0, dir.length - 1).split("/"));
     }, [dir]);
 
-    useEffect(()=>{
-        if(folders.filter(r=>r.checked).length == 0 && files.filter(r=>r.checked).length == 1){
-            if(files.filter(r=>r.checked)[0].extension == "zip"){
+    useEffect(() => {
+        if (folders.filter(r => r.checked).length == 0 && files.filter(r => r.checked).length == 1) {
+            if (files.filter(r => r.checked)[0].extension == "zip") {
                 setCanExtract(true);
             }
-            else{
+            else {
                 setCanExtract(false);
             }
         }
-        else{
+        else {
             setCanExtract(false);
         }
-    }, [files,folders]);
+    }, [files, folders]);
 
     return (
-        <Context.Provider value={{dir,setDir,files,setFiles,folders,setFolders}}>
+        <Context.Provider value={{ dir, setDir, files, setFiles, folders, setFolders }}>
             <ThemeProvider theme={theme}>
-                <div className="w3-row w3-padding w3-text-white w3-large" id="top" style={{background:"var(--purple)"}}>
+                <div className="w3-row w3-padding w3-text-white w3-large" id="top" style={{ background: "var(--purple)" }}>
                     <div className="w3-half">
-                        {backFolders.map((row,index)=>(
+                        {backFolders.map((row, index) => (
                             <>
-                                <font className="pointer px-1 py-1 rounded w3-hover-opacity" onClick={e=>{
-                                    setDir(backFolders.slice(0,index+1).join("/")+"/");
+                                <font className="pointer px-1 py-1 rounded w3-hover-opacity" onClick={e => {
+                                    setDir(backFolders.slice(0, index + 1).join("/") + "/");
                                 }}>{row}</font> <font className="w3-opacity">/</font>
                             </>
                         ))}
                     </div>
                     <div className="w3-half">
 
-                        {/*Rename*/ (files.filter(r=>r.checked).length +  folders.filter(r=>r.checked).length) == 1 && <i className="far fa-edit mr-15 pointer w3-hover-text-red" title="Rename" />}
-                        {/*Copy,Cut,Lock,Compress,Delete*/ (files.filter(r=>r.checked).length +  folders.filter(r=>r.checked).length) > 0 && <>
-                            <i className="far fa-copy mr-15 pointer w3-hover-text-red" title="Copy" />
-                            <i className="fa fa-cut mr-15 pointer w3-hover-text-red" title="Cut" />
-                            <i className="fa fa-lock mr-15 pointer w3-hover-text-red" title="Lock" />
-                            <i className="far fa-file-archive mr-15 pointer w3-hover-text-red" onClick={e=>setOpen({...open, compressFiles:true})} title="Compress" />
-                            <i className="far fa-trash-alt mr-15 pointer w3-hover-text-red" onClick={e=>setOpen({...open, delete:true})} title="Delete" />
+                        {/*Rename*/ (files.filter(r => r.checked).length) == 1 && <i className="far fa-edit mr-15 pointer w3-hover-text-red" title="Rename File" onClick={e => setOpen({ ...open, renameFile: true })} />}
+                        {/*Rename*/ (folders.filter(r => r.checked).length) == 1 && <i className="far fa-edit mr-15 pointer w3-hover-text-red" title="Rename Folder" onClick={e => setOpen({ ...open, renameFolder: true })} />}
+                        {/*Copy,Cut,Lock,Compress,Delete*/ (files.filter(r => r.checked).length + folders.filter(r => r.checked).length) > 0 && <>
+                            <i className="far fa-copy mr-15 pointer w3-hover-text-red" title="Copy" onClick={e => setOpen({ ...open, copy: true })} />
+                            <i className="fa fa-cut mr-15 pointer w3-hover-text-red" title="Cut" onClick={e => setOpen({ ...open, cut: true })} />
+                            <i className="fa fa-lock mr-15 pointer w3-hover-text-red" title="Lock" onClick={e => setOpen({ ...open, lock: true })} />
+                            <i className="far fa-file-archive mr-15 pointer w3-hover-text-red" onClick={e => setOpen({ ...open, compressFiles: true })} title="Compress" />
+                            <i className="far fa-trash-alt mr-15 pointer w3-hover-text-red" onClick={e => setOpen({ ...open, delete: true })} title="Delete" />
                         </>}
 
-                        {canExtract && <i className="fa fa-box-open mr-15 pointer w3-hover-text-red" onClick={e=>setOpen({...open, extract:true})} title="Extract" />}
+                        {canExtract && <i className="fa fa-box-open mr-15 pointer w3-hover-text-red" onClick={e => setOpen({ ...open, extract: true })} title="Extract" />}
 
                         <span className="ml-15 mr-15">&nbsp;</span>
 
-                        <i className="fa fa-file-medical mr-15 pointer w3-hover-text-red" onClick={e=>setOpen({...open, newFile:true})} title="New File" />
-                        <i className="fa fa-folder-plus mr-15 pointer w3-hover-text-red" onClick={e=>setOpen({...open, newFolder:true})} title="New Folder" />
+                        <i className="fa fa-file-medical mr-15 pointer w3-hover-text-red" onClick={e => setOpen({ ...open, newFile: true })} title="New File" />
+                        <i className="fa fa-folder-plus mr-15 pointer w3-hover-text-red" onClick={e => setOpen({ ...open, newFolder: true })} title="New Folder" />
                         <i className="fa fa-search mr-15 pointer w3-hover-text-red" title="Search" />
-                        <i className="fa fa-cloud-upload-alt mr-15 pointer w3-hover-text-red" onClick={e=>setOpen({...open, uploadFiles:true})} title="Upload files" />
-                        <i className="fa fa-sync-alt mr-15 pointer w3-hover-text-red" onClick={e=>openDir(dir)} title="Refresh" />
+                        <i className="fa fa-cloud-upload-alt mr-15 pointer w3-hover-text-red" onClick={e => setOpen({ ...open, uploadFiles: true })} title="Upload files" />
+                        <span className="material-symbols-rounded text-white mr-15 w3-hover-text-red" onClick={e => setOpen({ ...open, uploadFolder: true })}>drive_folder_upload</span>
+                        <i className="fa fa-sync-alt mr-15 pointer w3-hover-text-red" onClick={e => openDir(dir)} title="Refresh" />
                         <i className="fa fa-th mr-15 pointer w3-hover-text-red" title="Switch to Grid" />
                         <i className="fa fa-power-off mr-15 pointer w3-hover-text-red" title="Logout" />
                     </div>
                 </div>
                 <div className="w3-row" id="bottom">
-                    <div className="w3-col w3-border-right" id="structure" style={{width:"20%",background:"#fafafa",overflowY:"auto"}}> 
+                    <div className="w3-col w3-border-right" id="structure" style={{ width: "20%", background: "#fafafa", overflowY: "auto" }}>
                         <h5 className="py-1 px-2">Folder Structure</h5>
                         <div className="w3-padding">
                             <div className="w3-padding-small"><i className="fa fa-angle-down w3-small" /> <i className="fa fa-folder" /> {parentDir}</div>
                             <div className="pl-15">
-                                {parents.map((row,index)=>(
-                                    <FolderView key={row.name} dir={parentDir} data={row}/>
+                                {parents.map((row, index) => (
+                                    <FolderView key={row.name} dir={parentDir} data={row} />
                                 ))}
                             </div>
                         </div>
                     </div>
-                    <div className="w3-rest" id="content" style={{overflow:"auto"}}>
+                    <div className="w3-rest" id="content" style={{ overflow: "auto" }}>
                         <table className="table">
                             <thead>
                                 <tr>
                                     <th>
-                                        <input type={"checkbox"} checked={check} onChange={e=>{
+                                        <input type={"checkbox"} checked={check} onChange={e => {
                                             setCheck(e.target.checked);
-                                            setFiles(files.map((r=>{
+                                            setFiles(files.map((r => {
                                                 r.checked = e.target.checked;
                                                 return r;
                                             })));
-                                            setFolders(folders.map((r=>{
+                                            setFolders(folders.map((r => {
                                                 r.checked = e.target.checked
                                                 return r;
                                             })));
@@ -225,55 +309,55 @@ function Index(){
                                 </tr>
                             </thead>
                             <tbody>
-                                {folders.map((row,index)=>(
+                                {folders.map((row, index) => (
                                     <tr className="w3-hover-text-purple pointer" key={row.name}>
-                                        <td style={{color:"var(--purple)"}}>
-                                            <input type={"checkbox"} checked={row.checked} onChange={e=>{
-                                                setFolders(folders.map((r,i)=>{
-                                                    if(index == i){
+                                        <td style={{ color: "var(--purple)" }}>
+                                            <input type={"checkbox"} checked={row.checked} onChange={e => {
+                                                setFolders(folders.map((r, i) => {
+                                                    if (index == i) {
                                                         r.checked = e.target.checked
                                                     }
                                                     return r;
                                                 }))
                                             }} />
                                         </td>
-                                        <td style={{color:"var(--purple)"}} onClick={e=>{
-                                            setFolders(folders.map((r,i)=>{
-                                                if(index == i){
+                                        <td style={{ color: "var(--purple)" }} onClick={e => {
+                                            setFolders(folders.map((r, i) => {
+                                                if (index == i) {
                                                     r.checked = !r.checked
                                                 }
                                                 return r;
                                             }))
-                                        }} onDoubleClick={e=>setDir(dir+row.name+"/")}><i className="fa fa-folder" /> {row.name}</td>
+                                        }} onDoubleClick={e => setDir(dir + row.name + "/")}><i className="fa fa-folder" /> {row.name}</td>
                                         <td>{row.filesize}</td>
                                         <td>{row.date}</td>
                                         <td>{row.permissions}</td>
                                     </tr>
                                 ))}
 
-                                {files.map((row,index)=>(
+                                {files.map((row, index) => (
                                     <tr key={row.name}>
-                                        <td style={{color:"var(--purple)"}}>
-                                            <input type={"checkbox"} checked={row.checked} onChange={e=>{
-                                                setFiles(files.map((r,i)=>{
-                                                    if(index == i){
+                                        <td style={{ color: "var(--purple)" }}>
+                                            <input type={"checkbox"} checked={row.checked} onChange={e => {
+                                                setFiles(files.map((r, i) => {
+                                                    if (index == i) {
                                                         r.checked = e.target.checked
                                                     }
                                                     return r;
                                                 }))
                                             }} />
                                         </td>
-                                        <td style={{color:"var(--purple)"}} onClick={e=>{
-                                            setFiles(files.map((r,i)=>{
-                                                if(index == i){
+                                        <td style={{ color: "var(--purple)" }} onClick={e => {
+                                            setFiles(files.map((r, i) => {
+                                                if (index == i) {
                                                     r.checked = !r.checked
                                                 }
                                                 return r;
                                             }))
-                                        }} onDoubleClick={e=>{
+                                        }} onDoubleClick={e => {
                                             e.stopPropagation();
                                             setActive(row);
-                                            setOpen({...open,previewFile:true})
+                                            setOpen({ ...open, previewFile: true })
                                         }}><i className="fa fa-file" /> {shortenName(row.name)}</td>
                                         <td>{row.filesize} kb</td>
                                         <td>{row.date}</td>
@@ -285,104 +369,137 @@ function Index(){
                     </div>
                 </div>
 
-                {open.newFile && <NewFile onClose={()=>setOpen({...open, newFile:false})} onSuccess={()=>{
-                    setOpen({...open, newFile:false});
+                {open.newFile && <NewFile onClose={() => setOpen({ ...open, newFile: false })} onSuccess={() => {
+                    setOpen({ ...open, newFile: false });
                     openDir(dir);
                 }} />}
 
-                {open.newFolder && <NewFolder onClose={()=>setOpen({...open, newFolder:false})} onSuccess={()=>{
-                    setOpen({...open, newFolder:false});
+                {open.renameFile && <RenameFile
+                    onClose={() => setOpen({ ...open, renameFile: false })}
+                    onSuccess={() => {
+                        setOpen({ ...open, renameFile: false });
+                        openDir(dir);
+                    }}
+                    activeFile={files.filter(r => r.checked)[0]}
+                />}
+
+                {open.renameFolder && <RenameFolder
+                    onClose={() => setOpen({ ...open, renameFolder: false })}
+                    onSuccess={() => {
+                        setOpen({ ...open, renameFolder: false });
+                        openDir(dir);
+                    }}
+                    activeFile={folders.filter(r => r.checked)[0]}
+                />}
+
+                {open.copy && <Copy
+                    onClose={() => setOpen({ ...open, copy: false })}
+                    onSuccess={() => {
+                        setOpen({ ...open, copy: false });
+                        openDir(dir);
+                    }}
+                />}
+
+                {open.newFolder && <NewFolder onClose={() => setOpen({ ...open, newFolder: false })} onSuccess={() => {
+                    setOpen({ ...open, newFolder: false });
                     openDir(dir);
                 }} />}
 
                 {open.previewFile && <>
-                    <PreviewFile data={active} onClose={()=>setOpen({...open, previewFile:false})} />
+                    <PreviewFile data={active} onClose={() => setOpen({ ...open, previewFile: false })} />
                 </>}
 
                 {open.uploadFiles && <>
-                    <UploadFiles onClose={()=>{
-                        setOpen({...open, uploadFiles:false})
+                    <UploadFiles onClose={() => {
+                        setOpen({ ...open, uploadFiles: false })
+                        openDir(dir);
+                    }} />
+                </>}
+
+                {open.uploadFolder && <>
+                    <UploadFolder onClose={() => {
+                        setOpen({ ...open, uploadFolder: false })
                         openDir(dir);
                     }} />
                 </>}
 
                 {open.compressFiles && <>
-                    <CompressFiles onClose={()=>{
-                        setOpen({...open, compressFiles:false})
+                    <CompressFiles onClose={() => {
+                        setOpen({ ...open, compressFiles: false })
                         openDir(dir);
                     }} />
                 </>}
 
                 {open.extract && <>
-                    <ExtractFile onClose={()=>{
-                        setOpen({...open, extract:false})
+                    <ExtractFile onClose={() => {
+                        setOpen({ ...open, extract: false })
                         openDir(dir);
                     }} />
                 </>}
 
                 {open.delete && <Warning
                     title="Delete?"
-                    secondaryText={`Are you sure you want to delete ${files.filter(r=>r.checked).length} file(s) and ${folders.filter(r=>r.checked).length} folders`}
+                    secondaryText={`Are you sure you want to delete ${files.filter(r => r.checked).length} file(s) and ${folders.filter(r => r.checked).length} folders`}
                     action={{
-                        text:"Confirm",
-                        callback:()=>{
+                        text: "Confirm",
+                        callback: () => {
                             $.post("api/", {
-                                deleteFiles:"true",
-                                files:JSON.stringify(files.filter(r=>r.checked)),
-                                folders:JSON.stringify(folders.filter(r=>r.checked)),
-                                dir
-                            }, response=>{
-                                try{
+                                deleteFiles: "true",
+                                files: JSON.stringify(files.filter(r => r.checked)),
+                                folders: JSON.stringify(folders.filter(r => r.checked)),
+                                dir: encode_to_base64(dir)
+                            }, response => {
+                                try {
                                     let res = JSON.parse(response);
-                                    if(res.status){
-                                        setOpen({...open, delete:false});
+                                    if (res.status) {
+                                        setOpen({ ...open, delete: false });
                                         //props.onCancel();
                                         Toast("Success");
                                         openDir(dir);
                                     }
-                                    else{
+                                    else {
                                         Toast(res.message);
                                     }
                                 }
-                                catch(E){
-                                    alert(E.toString()+response);
+                                catch (E) {
+                                    alert(E.toString() + response);
                                 }
                             })
                         }
                     }}
-                    onClose={()=>setOpen({...open, delete:false})}
+                    onClose={() => setOpen({ ...open, delete: false })}
                 />}
             </ThemeProvider>
         </Context.Provider>
     )
 }
 
-function FolderView(props){
+function FolderView(props) {
     const [open, setOpen] = useState(false);
     const [hover, setHover] = useState(false);
-    const [folders,setFolders] = useState([]);
-    const {dir,setDir} = useContext(Context);
+    const [folders, setFolders] = useState([]);
+    const { dir, setDir } = useContext(Context);
 
-    useEffect(()=>{
-        if(open){
-            $.get("api/", {openDir:props.dir+props.data.name+"/"}, function(response){
+    useEffect(() => {
+        if (open) {
+            $.get("api/", { openDir: encode_to_base64(props.dir + props.data.name + "/") }, function (response) {
                 //alert(response);
-                try{
+                try {
                     let res = JSON.parse(response);
-    
-                    if(res.status){
+
+                    if (res.status) {
                         setFolders(res.folders);
 
-                        if(res.folders.length == 0){
-                            setDir(props.dir+props.data.name+"/");
+                        if (res.folders.length == 0) {
+                            setDir(props.dir + props.data.name + "/");
                         }
                     }
-                    else{
+                    else {
                         alert(res.message)
                     }
                 }
-                catch(E){
-                    alert(E.toString()+response);
+                catch (E) {
+                    alert(E.toString() + response);
                 }
             })
         }
@@ -390,17 +507,17 @@ function FolderView(props){
 
     return (
         <>
-            <div className="w3-padding-small pointer w3-hover-text-purple" onClick={e=>setOpen(!open)} onDoubleClick={e=>{
+            <div className="w3-padding-small pointer w3-hover-text-purple" onClick={e => setOpen(!open)} onDoubleClick={e => {
                 Toast("Double")
-                setDir(props.dir+props.data.name+"/");
-            }} onMouseEnter={e=>setHover(true)} onMouseLeave={e=>setHover(false)}>
-                <i className={"fa w3-small "+(open?"fa-angle-up":"fa-angle-right")} /> 
-                <i className="fa fa-folder" style={{marginLeft:"5px",marginRight:"5px"}} /> 
-                {props.data.name} <i className="fa fa-long-arrow-alt-right ml-2" style={{visibility:hover?"visible":"hidden"}} onClick={e=>setDir(props.dir+props.data.name+"/")}/>
+                setDir(props.dir + props.data.name + "/");
+            }} onMouseEnter={e => setHover(true)} onMouseLeave={e => setHover(false)}>
+                <i className={"fa w3-small " + (open ? "fa-angle-up" : "fa-angle-right")} />
+                <i className="fa fa-folder" style={{ marginLeft: "5px", marginRight: "5px" }} />
+                {props.data.name} <i className="fa fa-long-arrow-alt-right ml-2" style={{ visibility: hover ? "visible" : "hidden" }} onClick={e => setDir(props.dir + props.data.name + "/")} />
             </div>
             {open && <div className="pl-3">
-                {folders.map((row,index)=>(
-                    <FolderView key={row.name} dir={props.dir+props.data.name+"/"} data={row} />
+                {folders.map((row, index) => (
+                    <FolderView key={row.name} dir={props.dir + props.data.name + "/"} data={row} />
                 ))}
             </div>}
         </>
@@ -408,55 +525,72 @@ function FolderView(props){
 }
 
 function NewFile(props) {
-    const [open,setOpen] = useState(true);
-    const {dir,setDir} = useContext(Context);
-    const [error,setError] = useState("");
+    const [open, setOpen] = useState(true);
+    const { dir, setDir } = useContext(Context);
+    const [error, setError] = useState("");
+    const inputRef = useRef(null)
 
     const createFile = (event) => {
         event.preventDefault();
 
-        $.post("api/", $(event.target).serialize(), response=>{
-            try{
+        $.post("api/", $(event.target).serialize(), response => {
+            try {
                 let res = JSON.parse(response);
-                if(res.status){
+                if (res.status) {
                     Toast("Success");
                     setOpen(false);
-                    if(props.onSuccess != undefined){
+                    if (props.onSuccess != undefined) {
                         props.onSuccess()
                     }
                 }
-                else{
+                else {
                     setError(res.message);
                 }
             }
-            catch(E){
-                alert(E.toString()+response)
+            catch (E) {
+                alert(E.toString() + response)
             }
         })
     }
 
+    useEffect(() => {
+        setTimeout(() => {
+            if (inputRef.current) {
+                inputRef.current.focus();
+            }
+        }, 200);
+    }, [])
+
     return (
         <>
-            <Dialog open={open} onClose={()=>{
+            <Dialog open={open} onClose={() => {
                 setOpen(false);
-                if(props.onClose != undefined){
+                if (props.onClose != undefined) {
                     props.onClose();
                 }
             }}>
-                <div className="w3-padding" style={{width:"400px"}}>
+                <div className="w3-padding" style={{ width: "370px" }}>
                     <font className="w3-large">Create New File</font>
 
                     {error.length > 0 && <Alert severity="warning" onClose={() => setError("")}>{error}</Alert>}
 
                     <form onSubmit={createFile}>
-                        <input type="hidden" name="dir" value={dir}/>
-                        <TextField fullWidth label="Enter filename" variant="standard" size="small" name="new_file" sx={{mt:2, mb:3}} />
+                        <input type="hidden" name="dir" value={encode_to_base64(dir)} />
+                        <TextField
+                            fullWidth
+                            label="Enter filename"
+                            variant="standard"
+                            size="small"
+                            name="new_file"
+                            sx={{ mt: 2, mb: 3 }}
+                            inputRef={inputRef}
+                        />
 
                         <div className="clearfix">
                             <Button variant="contained" type="submit">Submit</Button>
-                            <Button variant="outlined" type="button" color={"error"} className="float-right" onClick={()=>{
+                            <Button variant="outlined" type="button" color={"error"} className="float-right" onClick={() => {
                                 setOpen(false);
-                                if(props.onClose != undefined){
+                                if (props.onClose != undefined) {
                                     props.onClose();
                                 }
                             }}>Close</Button>
@@ -468,57 +602,232 @@ function NewFile(props) {
     )
 }
 
-function ExtractFile(props) {
-    const [open,setOpen] = useState(true);
-    const {dir,setDir,files,setFiles} = useContext(Context);
-    const [error,setError] = useState("");
+function RenameFile(props) {
+    const [open, setOpen] = useState(true);
+    const { dir, setDir } = useContext(Context);
+    const [error, setError] = useState("");
+    const inputRef = useRef(null)
+
+    const [form, setForm] = useState({
+        filename: props.activeFile.name
+    });
 
     const createFile = (event) => {
         event.preventDefault();
 
-        $.post("api/", $(event.target).serialize(), response=>{
-            try{
+        $.post("api/", $(event.target).serialize(), response => {
+            try {
                 let res = JSON.parse(response);
-                if(res.status){
+                if (res.status) {
                     Toast("Success");
                     setOpen(false);
-                    if(props.onClose != undefined){
-                        props.onClose()
+                    if (props.onSuccess != undefined) {
+                        props.onSuccess()
                     }
                 }
-                else{
+                else {
                     setError(res.message);
                 }
             }
-            catch(E){
-                alert(E.toString()+response)
+            catch (E) {
+                alert(E.toString() + response)
+            }
+        })
+    }
+
+    const onClose = () => {
+        setOpen(false);
+        if (props.onClose != undefined) {
+            props.onClose();
+        }
+    }
+
+    useEffect(() => {
+        setTimeout(() => {
+            if (inputRef.current) {
+                inputRef.current.focus();
+            }
+        }, 200);
+    }, [])
+
+    return (
+        <>
+            <Dialog open={open} onClose={onClose}>
+                <div className="w3-padding" style={{ width: "370px" }}>
+                    <CloseHeading
+                        label={<><i className="fa fa-pen-to-square mr-2 text-gray-700" /> Rename File</>}
+                        onClose={onClose}
+                    />
+
+                    {error.length > 0 && <Alert severity="warning" onClose={() => setError("")}>{error}</Alert>}
+
+                    <form onSubmit={createFile}>
+                        <input type="hidden" name="dir" value={encode_to_base64(dir)} />
+                        <input type="hidden" name="old_file" value={props.activeFile.name} />
+
+                        <TextField
+                            fullWidth
+                            label="Enter filename"
+                            variant="standard"
+                            size="small"
+                            name="rename_file"
+                            sx={{ mt: 2, mb: 3 }}
+                            inputRef={inputRef}
+                            value={form.filename}
+                            onChange={e => setForm({ ...form, filename: e.target.value })}
+                        />
+
+                        <div className="clearfix">
+                            <Button variant="contained" type="submit">Submit</Button>
+                            <Button variant="outlined" type="button" color={"error"} className="float-right" onClick={onClose}>Close</Button>
+                        </div>
+                    </form>
+                </div>
+            </Dialog>
+        </>
+    )
+}
+
+function RenameFolder(props) {
+    const [open, setOpen] = useState(true);
+    const { dir, setDir } = useContext(Context);
+    const [error, setError] = useState("");
+    const inputRef = useRef(null)
+
+    const [form, setForm] = useState({
+        filename: props.activeFile.name
+    });
+
+    const createFile = (event) => {
+        event.preventDefault();
+
+        $.post("api/", $(event.target).serialize(), response => {
+            try {
+                let res = JSON.parse(response);
+                if (res.status) {
+                    Toast("Success");
+                    setOpen(false);
+                    if (props.onSuccess != undefined) {
+                        props.onSuccess()
+                    }
+                }
+                else {
+                    setError(res.message);
+                }
+            }
+            catch (E) {
+                alert(E.toString() + response)
+            }
+        })
+    }
+
+    const onClose = () => {
+        setOpen(false);
+        if (props.onClose != undefined) {
+            props.onClose();
+        }
+    }
+
+    useEffect(() => {
+        setTimeout(() => {
+            if (inputRef.current) {
+                inputRef.current.focus();
+            }
+        }, 200);
+    }, [])
+
+    return (
+        <>
+            <Dialog open={open} onClose={onClose}>
+                <div className="w3-padding" style={{ width: "370px" }}>
+                    <CloseHeading
+                        label={<><i className="fa fa-pen-to-square mr-2 text-gray-700" /> Rename Folder</>}
+                        onClose={onClose}
+                    />
+
+                    {error.length > 0 && <Alert severity="warning" onClose={() => setError("")}>{error}</Alert>}
+
+                    <form onSubmit={createFile}>
+                        <input type="hidden" name="dir" value={encode_to_base64(dir)} />
+                        <input type="hidden" name="old_folder" value={props.activeFile.name} />
+
+                        <TextField
+                            fullWidth
+                            label="Enter folder name"
+                            variant="standard"
+                            size="small"
+                            name="rename_folder"
+                            sx={{ mt: 2, mb: 3 }}
+                            inputRef={inputRef}
+                            value={form.filename}
+                            onChange={e => setForm({ ...form, filename: e.target.value })}
+                        />
+
+                        <div className="clearfix">
+                            <Button variant="contained" type="submit">Submit</Button>
+                            <Button variant="outlined" type="button" color={"error"} className="float-right" onClick={onClose}>Close</Button>
+                        </div>
+                    </form>
+                </div>
+            </Dialog>
+        </>
+    )
+}
+
+function ExtractFile(props) {
+    const [open, setOpen] = useState(true);
+    const { dir, setDir, files, setFiles } = useContext(Context);
+    const [error, setError] = useState("");
+
+    const createFile = (event) => {
+        event.preventDefault();
+
+        let formdata = new FormData(event.target);
+        formdata.set("extract_dir", encode_to_base64(formdata.get("extract_dir")));
+
+        post("api/", formdata, response => {
+            try {
+                let res = JSON.parse(response);
+                if (res.status) {
+                    Toast("Success");
+                    setOpen(false);
+                    if (props.onClose != undefined) {
+                        props.onClose()
+                    }
+                }
+                else {
+                    setError(res.message);
+                }
+            }
+            catch (E) {
+                alert(E.toString() + response)
             }
         })
     }
 
     return (
         <>
-            <Dialog open={open} onClose={()=>{
+            <Dialog open={open} onClose={() => {
                 setOpen(false);
-                if(props.onClose != undefined){
+                if (props.onClose != undefined) {
                     props.onClose();
                 }
             }}>
-                <div className="w3-padding" style={{width:"400px"}}>
+                <div className="w3-padding" style={{ width: "400px" }}>
                     <font className="w3-large">Extract File</font>
 
                     {error.length > 0 && <Alert severity="warning" onClose={() => setError("")}>{error}</Alert>}
 
                     <form onSubmit={createFile}>
-                        <input type="hidden" name="dir" value={dir}/>
-                        <input type="hidden" name="zipFile" value={files.filter(r=>r.checked)[0].name}/>
-                        <TextField fullWidth label="Enter directory to extract to" variant="standard" size="small" name="extract_dir" sx={{mt:2, mb:3}} />
+                        <input type="hidden" name="dir" value={encode_to_base64(dir)} />
+                        <input type="hidden" name="zipFile" value={files.filter(r => r.checked)[0].name} />
+                        <TextField fullWidth label="Enter directory to extract to" variant="standard" size="small" name="extract_dir" sx={{ mt: 2, mb: 3 }} required />
 
                         <div className="clearfix">
                             <Button variant="contained" type="submit">Submit</Button>
-                            <Button variant="outlined" type="button" color={"error"} className="float-right" onClick={()=>{
+                            <Button variant="outlined" type="button" color={"error"} className="float-right" onClick={() => {
                                 setOpen(false);
-                                if(props.onClose != undefined){
+                                if (props.onClose != undefined) {
                                     props.onClose();
                                 }
                             }}>Close</Button>
@@ -531,55 +840,156 @@ function ExtractFile(props) {
 }
 
 function NewFolder(props) {
-    const [open,setOpen] = useState(true);
-    const {dir,setDir} = useContext(Context);
-    const [error,setError] = useState("");
+    const [open, setOpen] = useState(true);
+    const { dir, setDir } = useContext(Context);
+    const [error, setError] = useState("");
+    const inputRef = useRef(null);
 
     const createFolder = (event) => {
         event.preventDefault();
 
-        $.post("api/", $(event.target).serialize(), response=>{
-            try{
+        $.post("api/", $(event.target).serialize(), response => {
+            try {
                 let res = JSON.parse(response);
-                if(res.status){
+                if (res.status) {
                     Toast("Success");
                     setOpen(false);
-                    if(props.onSuccess != undefined){
+                    if (props.onSuccess != undefined) {
                         props.onSuccess()
                     }
                 }
-                else{
+                else {
                     setError(res.message);
                 }
             }
-            catch(E){
-                alert(E.toString()+response)
+            catch (E) {
+                alert(E.toString() + response)
             }
         })
     }
 
+    const onClose = () => {
+        setOpen(false);
+        if (props.onClose != undefined) {
+            props.onClose();
+        }
+    }
+
+    useEffect(() => {
+        setTimeout(() => {
+            if (inputRef.current) {
+                inputRef.current.focus();
+            }
+        }, 200);
+    }, [])
+
     return (
         <>
-            <Dialog open={open} onClose={()=>{
-                setOpen(false);
-                if(props.onClose != undefined){
-                    props.onClose();
-                }
-            }}>
-                <div className="w3-padding" style={{width:"400px"}}>
-                    <font className="w3-large">Create New Folder</font>
+            <Dialog open={open} onClose={onClose}>
+                <div className="w3-padding" style={{ width: "370px" }}>
+                    <CloseHeading
+                        label={<><i className="fa fa-folder-plus mr-2 text-gray-700" /> Create New Folder</>}
+                        onClose={onClose}
+                    />
 
-                    {error.length > 0 && <Alert severity="warning" onClose={() => setError("")}>{error}</Alert>}
+                    {error.length > 0 && <Alert severity="warning" sx={{ my: 1 }} onClose={() => setError("")}>{error}</Alert>}
 
                     <form onSubmit={createFolder}>
-                        <input type="hidden" name="dir" value={dir}/>
-                        <TextField fullWidth label="Enter folder name" variant="standard" size="small" name="new_folder" sx={{mt:2, mb:3}} />
+                        <input type="hidden" name="dir" value={dir} />
+                        <TextField
+                            fullWidth
+                            label="Enter folder name"
+                            variant="standard"
+                            size="small"
+                            name="new_folder"
+                            sx={{ mt: 2, mb: 3 }}
+                            inputRef={inputRef}
+                        />
 
                         <div className="clearfix">
                             <Button variant="contained" type="submit">Submit</Button>
-                            <Button variant="outlined" type="button" color={"error"} className="float-right" onClick={()=>{
+                            <Button variant="outlined" type="button" color={"error"} className="float-right" onClick={() => {
                                 setOpen(false);
-                                if(props.onClose != undefined){
+                                if (props.onClose != undefined) {
+                                    props.onClose();
+                                }
+                            }}>Close</Button>
+                        </div>
+                    </form>
+                </div>
+            </Dialog>
+        </>
+    )
+}
+
+function Copy(props) {
+    const [open, setOpen] = useState(true);
+    const { dir, setDir } = useContext(Context);
+    const [destiny, setDestiny] = useState(dir);
+    const [error, setError] = useState("");
+    const inputRef = useRef(null);
+
+    const createFolder = (event) => {
+        event.preventDefault();
+
+        $.post("api/", $(event.target).serialize(), response => {
+            try {
+                let res = JSON.parse(response);
+                if (res.status) {
+                    Toast("Success");
+                    setOpen(false);
+                    if (props.onSuccess != undefined) {
+                        props.onSuccess()
+                    }
+                }
+                else {
+                    setError(res.message);
+                }
+            }
+            catch (E) {
+                alert(E.toString() + response)
+            }
+        })
+    }
+
+    const onClose = () => {
+        setOpen(false);
+        if (props.onClose != undefined) {
+            props.onClose();
+        }
+    }
+
+    useEffect(() => {
+        setTimeout(() => {
+            if (inputRef.current) {
+                inputRef.current.focus();
+            }
+        }, 200);
+    }, [])
+
+    return (
+        <>
+            <Dialog open={open} onClose={onClose}>
+                <div className="w3-padding" style={{ width: "370px" }}>
+                    <CloseHeading
+                        label={<><i className="fa fa-copy mr-2 text-gray-700" /> Copy Files/Folders</>}
+                        onClose={onClose}
+                    />
+
+                    {error.length > 0 && <Alert severity="warning" sx={{ my: 1 }} onClose={() => setError("")}>{error}</Alert>}
+
+                    <form onSubmit={createFolder}>
+                        <input type="hidden" name="dir" value={encode_to_base64(dir)} />
+                        <DirChooser
+                            defaultDir={dir}
+                            onChange={d => setDestiny(d)}
+                        />
+
+                        <div className="clearfix">
+                            <Button variant="contained" type="submit">Submit</Button>
+                            <Button variant="outlined" type="button" color={"error"} className="float-right" onClick={() => {
+                                setOpen(false);
+                                if (props.onClose != undefined) {
                                     props.onClose();
                                 }
                             }}>Close</Button>
@@ -592,71 +1002,71 @@ function NewFolder(props) {
 }
 
 function CompressFiles(props) {
-    const [open,setOpen] = useState(true);
-    const {dir,setDir,files,folders} = useContext(Context);
-    const [error,setError] = useState("");
+    const [open, setOpen] = useState(true);
+    const { dir, setDir, files, folders } = useContext(Context);
+    const [error, setError] = useState("");
 
     const compress = (event) => {
         event.preventDefault();
 
         $.post("api/", {
-            dir,
-            files:JSON.stringify(files.filter(r=>r.checked)),
-            folders:JSON.stringify(folders.filter(r=>r.checked)),
-            zipName:event.target.zipName.value
-        }, response=>{
-            try{
+            dir: encode_to_base64(dir),
+            files: JSON.stringify(files.filter(r => r.checked)),
+            folders: JSON.stringify(folders.filter(r => r.checked)),
+            zipName: event.target.zipName.value
+        }, response => {
+            try {
                 let res = JSON.parse(response);
-                if(res.status){
+                if (res.status) {
                     Toast("Success");
                     setOpen(false);
-                    if(props.onClose != undefined){
+                    if (props.onClose != undefined) {
                         props.onClose()
                     }
                 }
-                else{
+                else {
                     setError(res.message);
                 }
             }
-            catch(E){
-                alert(E.toString()+response)
+            catch (E) {
+                alert(E.toString() + response)
             }
         })
     }
 
     return (
         <>
-            <Dialog open={open} onClose={()=>{
+            <Dialog open={open} onClose={() => {
                 setOpen(false);
-                if(props.onClose != undefined){
+                if (props.onClose != undefined) {
                     props.onClose();
                 }
             }}>
-                <div className="w3-padding" style={{width:"400px"}}>
+                <div className="w3-padding" style={{ width: "400px" }}>
                     <font className="w3-large">Compress Files</font>
 
                     {error.length > 0 && <Alert severity="warning" onClose={() => setError("")}>{error}</Alert>}
 
                     <form onSubmit={compress}>
-                        <input type="hidden" name="dir" value={dir}/>
-                        <FormControl sx={{ mt: 2, mb:3}} fullWidth variant="outlined">
+                        <input type="hidden" name="dir" value={dir} />
+                        <FormControl sx={{ mt: 2, mb: 3 }} fullWidth variant="outlined">
                             <OutlinedInput
                                 id="outlined-adornment-weight"
                                 name="zipName"
                                 endAdornment={<InputAdornment position="end">.zip</InputAdornment>}
                                 aria-describedby="outlined-weight-helper-text"
                                 inputProps={{
-                                'aria-label': 'weight',
+                                    'aria-label': 'weight',
                                 }}
-                                />
+                            />
                             <FormHelperText id="outlined-weight-helper-text">Enter filename</FormHelperText>
                         </FormControl>
 
                         <div className="clearfix">
                             <Button variant="contained" type="submit">Submit</Button>
-                            <Button variant="outlined" type="button" color={"error"} className="float-right" onClick={()=>{
+                            <Button variant="outlined" type="button" color={"error"} className="float-right" onClick={() => {
                                 setOpen(false);
-                                if(props.onClose != undefined){
+                                if (props.onClose != undefined) {
                                     props.onClose();
                                 }
                             }}>Close</Button>
@@ -668,46 +1078,46 @@ function CompressFiles(props) {
     )
 }
 
-function PreviewFile(props){
-    const [open,setOpen] = useState(true);
-    const [large,setLarge] = useState(false);
-    const [active,setActive] = useState(props.data);
-    const {dir,setDir} = useContext(Context);
-    const [height,setHeight] = useState(500);
+function PreviewFile(props) {
+    const [open, setOpen] = useState(true);
+    const [large, setLarge] = useState(false);
+    const [active, setActive] = useState(props.data);
+    const { dir, setDir } = useContext(Context);
+    const [height, setHeight] = useState(500);
 
-    useEffect(()=>{
-        setHeight(large? window.innerHeight - $('#topBar').height() : 500);
+    useEffect(() => {
+        setHeight(large ? window.innerHeight - $('#topBar').height() : 500);
     }, [large])
 
     return (
         <>
-            <div className="w3-modal" style={{display:open?"block":"none",paddingTop:large?"0px":"80px"}} onClick={e=>{
+            <div className="w3-modal" style={{ display: open ? "block" : "none", paddingTop: large ? "0px" : "80px" }} onClick={e => {
                 setOpen(false);
-                if(props.onClose != undefined){
+                if (props.onClose != undefined) {
                     props.onClose();
                 }
             }}>
-                <div className="w3-modal-content w3-round-large" style={{width:large?window.innerWidth+"px":"800px",}} onClick={e=>e.stopPropagation()}>
-                    <div className="w3-padding-large rounded-top w3-text-white clearfix" id="topBar" style={{background:"var(--purple)"}}>
+                <div className="w3-modal-content w3-round-large" style={{ width: large ? window.innerWidth + "px" : "800px", }} onClick={e => e.stopPropagation()}>
+                    <div className="w3-padding-large rounded-top w3-text-white clearfix" id="topBar" style={{ background: "var(--purple)" }}>
                         Preview: {props.data.name}
 
                         <span className="float-right">
-                            <i className="fa fa-expand pointer w3-hover-text-red" onClick={e=>setLarge(!large)} />
+                            <i className="fa fa-expand pointer w3-hover-text-red" onClick={e => setLarge(!large)} />
 
-                            <i className="fa fa-times ml-3 pointer w3-hover-text-red" title="Close" onClick={e=>{
+                            <i className="fa fa-times ml-3 pointer w3-hover-text-red" title="Close" onClick={e => {
                                 setOpen(false);
-                                if(props.onClose != undefined){
+                                if (props.onClose != undefined) {
                                     props.onClose();
                                 }
                             }} />
                         </span>
                     </div>
                     <div className="">
-                        {["png", "jpeg", "jpg","webp","gif"].includes(active.extension) ? <div className="w3-center">
-                            <img src={dir+active.name} width={"80%"} />
-                        </div>:
-                        ["html", "css", "php","js","jsx", "xml","json","java", "ini", "htaccess","svg","md"].includes(active.extension) ? <Editor file={active.name} dir={dir} height={height} extension={active.extension} />:
-                        <></>}
+                        {["png", "jpeg", "jpg", "webp", "gif"].includes(active.extension) ? <div className="w3-center">
+                            <img src={dir + active.name} width={"80%"} />
+                        </div> :
+                            ["html", "css", "php", "js", "jsx", "xml", "json", "java", "ini", "htaccess", "svg", "md"].includes(active.extension) ? <Editor file={active.name} dir={dir} height={height} extension={active.extension} /> :
+                                <></>}
                     </div>
                 </div>
             </div>
@@ -715,30 +1125,30 @@ function PreviewFile(props){
     )
 }
 
-function Editor(props){
+function Editor(props) {
     return (
         <>
-            <iframe src={`sample.php?dir=${props.dir}&file=${props.file}`} style={{width:"100%", height:props.height+"px",border:"none"}}></iframe>
+            <iframe src={`sample.php?dir=${encode_to_base64(props.dir)}&file=${props.file}`} style={{ width: "100%", height: props.height + "px", border: "none" }}></iframe>
         </>
     )
 }
 
-function UploadFiles(props){
-    const {dir,setDir} = useContext(Context);
-    const [open,setOpen] = useState(true);
-    const [files,setFiles] = useState([]);
-    const [uploadIndex,setUploadIndex] = useState(0);
-    const [uploading,setUploading] = useState(false);
-    const [progress,setProgress] = useState(0);
+function UploadFiles(props) {
+    const { dir, setDir } = useContext(Context);
+    const [open, setOpen] = useState(true);
+    const [files, setFiles] = useState([]);
+    const [uploadIndex, setUploadIndex] = useState(0);
+    const [uploading, setUploading] = useState(false);
+    const [progress, setProgress] = useState(0);
 
     const choose = (event) => {
         let input = document.createElement("input");
         input.type = 'file';
         input.multiple = 'multiple'
 
-        input.addEventListener('change', event=>{
+        input.addEventListener('change', event => {
             let fs = [];
-            for(let f of input.files){
+            for (let f of input.files) {
                 fs.push(f);
             }
             setFiles(fs);
@@ -754,25 +1164,25 @@ function UploadFiles(props){
         let uIndex = 0;
 
         let doJob = () => {
-            if(uIndex < files.length){
+            if (uIndex < files.length) {
                 setProgress(0)
                 let formdata = new FormData();
-                formdata.append("dir", dir);
+                formdata.append("dir", encode_to_base64(dir));
                 formdata.append("upload_file", files[uIndex]);
 
                 var ajax = new XMLHttpRequest();
 
-                var completeHandler = function(event) {
+                var completeHandler = function (event) {
                     var response = event.target.responseText;
                     Toast(response);
                     uIndex += 1;
                     doJob()
                 }
-                
-                var progressHandler = function(event) {
-                    setProgress(Math.ceil((event.loaded / event.total)*100));
+
+                var progressHandler = function (event) {
+                    setProgress(Math.ceil((event.loaded / event.total) * 100));
                 }
-                
+
                 ajax.upload.addEventListener("progress", progressHandler, false);
                 ajax.addEventListener("load", completeHandler, false);
                 //ajax.addEventListener("error", errorHandler, false);
@@ -780,7 +1190,7 @@ function UploadFiles(props){
                 ajax.open("POST", "api/");
                 ajax.send(formdata);
             }
-            else{
+            else {
                 Toast("finished");
                 setOpen(false);
             }
@@ -789,83 +1199,199 @@ function UploadFiles(props){
         doJob();
     }
 
-    const fileSize = (bytes) =>{
-        if (bytes / (1024*1024) > 0){
-            return (bytes / (1024*1024)).toFixed(2)+"Mb"
+    const fileSize = (bytes) => {
+        if (bytes / (1024 * 1024) > 0) {
+            return (bytes / (1024 * 1024)).toFixed(2) + "Mb"
         }
-        return (bytes / 1024).toFixed(2)+"kb"
+        return (bytes / 1024).toFixed(2) + "kb"
     }
 
-    useEffect(()=>{
-        if(props.onClose != undefined && !open){
+    useEffect(() => {
+        if (props.onClose != undefined && !open) {
             props.onClose();
         }
     }, [open])
 
     return (
         <>
-            <Dialog open={open} onClose={()=>setOpen(false)}>
-                <div className="w3-padding" style={{width:"400px"}}>
+            <Dialog open={open} onClose={() => setOpen(false)}>
+                <div className="w3-padding" style={{ width: "400px" }}>
                     <font className="block w3-large">Upload files</font>
                     <i>Current Dir: {dir}</i>
 
                     {files.length > 0 && <>
                         <ul className="list-group">
-                            {files.map((row,index)=>(
+                            {files.map((row, index) => (
                                 <li key={index} className="list-group-item hover:bg-purple-200 pointer clearfix">
                                     {row.name} - {fileSize(row.size)}
 
-                                    <i onClick={e=>{
-                                        setFiles(files.filter((r,i)=>i!=index))
-                                    }} className="fa fa-times-circle text-lg float-right"/>
+                                    <i onClick={e => {
+                                        setFiles(files.filter((r, i) => i != index))
+                                    }} className="fa fa-times-circle text-lg float-right" />
                                 </li>
                             ))}
                         </ul>
 
                         {uploading ? <>
-                            <div className="progress mt-3" style={{height:"10px"}}>
-                                <div className="progress-bar" style={{width:progress+"%", height:"10px"}}></div>
+                            <div className="progress mt-3" style={{ height: "10px" }}>
+                                <div className="progress-bar" style={{ width: progress + "%", height: "10px" }}></div>
                             </div>
                         </>
-                        :<Button variant="contained" fullWidth sx={{my:2}} onClick={upload}>Upload</Button>}
+                            : <Button variant="contained" fullWidth sx={{ my: 2 }} onClick={upload}>Upload</Button>}
                     </>}
 
-                    {(!uploading) && <Button fullWidth sx={{my:2}} onClick={choose}>Choose Files</Button>}
+                    {(!uploading) && <Button fullWidth sx={{ my: 2 }} onClick={choose}>Choose Files</Button>}
 
-                    <BottomClose onClose={()=>setOpen(false)}/>
+                    <BottomClose onClose={() => setOpen(false)} />
                 </div>
             </Dialog>
         </>
     )
 }
 
-function CloseHeading(props){
+function UploadFolder(props) {
+    const { dir, setDir } = useContext(Context);
+    const [open, setOpen] = useState(true);
+    const [files, setFiles] = useState([]);
+    const [uploadIndex, setUploadIndex] = useState(0);
+    const [uploading, setUploading] = useState(false);
+    const [progress, setProgress] = useState(0);
+    const [message, setMessage] = useState('');
+
+    const upload = (event) => {
+        //
+    }
+
+    const handleFileChange = (e) => {
+        // The `e.target.files` property contains a FileList of the selected files.
+        // We convert it to an array for easier handling.
+        const selectedFiles = Array.from(e.target.files);
+        setFiles(selectedFiles);
+        // Clear any previous messages when a new folder is selected.
+        setMessage('');
+    };
+
+    const handleUpload = async (e) => {
+        e.preventDefault();
+
+        // Check if any files are selected.
+        if (files.length === 0) {
+            setMessage('Please select a folder to upload.');
+            setMessageType('error');
+            return;
+        }
+
+        setUploading(true);
+        setMessage('Uploading...');
+
+        // Create a new FormData object to send the files.
+        const formData = new FormData();
+
+        formData.append('dir', encode_to_base64(dir));
+        formData.append('upload_folder', "true");
+
+        // Loop through the files array and append each file to the FormData.
+        files.forEach(file => {
+            // The `file.webkitRelativePath` is key here. It's a property on the File object
+            // that contains the relative path of the file within the selected directory.
+            // We use this as the filename on the server to preserve the folder structure.
+            formData.append('uploaded_files[]', file, file.webkitRelativePath);
+        });
+
+        try {
+            Toast("Please wait...")
+            post("api/", formData, (response) => {
+                Toast(response)
+            })
+        } catch (error) {
+            console.error('Upload Error:', error);
+            Toast('Network error or server is unreachable.');
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const fileSize = (bytes) => {
+        if (bytes / (1024 * 1024) > 0) {
+            return (bytes / (1024 * 1024)).toFixed(2) + "Mb"
+        }
+        return (bytes / 1024).toFixed(2) + "kb"
+    }
+
+    useEffect(() => {
+        if (props.onClose != undefined && !open) {
+            props.onClose();
+        }
+    }, [open])
+
     return (
         <>
-            <div className={"clearfix "+(props.className != undefined ? props.className : "")}>
+            <Dialog open={open} onClose={() => setOpen(false)}>
+                <div className="w3-padding" style={{ width: "400px" }}>
+                    <font className="block w3-large">Upload folder</font>
+                    <i>Current Dir: {dir}</i>
+
+                    <form onSubmit={handleUpload}>
+                        <div>
+                            <label htmlFor="folderInput" className="block text-sm font-medium text-gray-700 mb-2">
+                                Select a folder to upload
+                            </label>
+                            <input
+                                type="file"
+                                id="folderInput"
+                                name="folderInput[]"
+                                webkitdirectory="true"
+                                directory="true"
+                                multiple
+                                required
+                                onChange={handleFileChange}
+                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"
+                            />
+                        </div>
+                        <Button
+                            type="submit"
+                            fullWidth
+                            variant="contained"
+                            sx={{ my: 2 }}
+                        >
+                            Upload Folder
+                        </Button>
+                    </form>
+
+                    <BottomClose onClose={() => setOpen(false)} />
+                </div>
+            </Dialog>
+        </>
+    )
+}
+//#region Custom Views
+function CloseHeading(props) {
+    return (
+        <>
+            <div className={"clearfix " + (props.className != undefined ? props.className : "")}>
                 <font className="w3-large">{props.label}</font>
 
-                <span className="bg-gray-200 w3-round-large bcenter float-right pointer hover:bg-gray-300" onClick={e=>{
-                    if(props.onClose != undefined){
+                <span className="bg-gray-200 w3-round-large bcenter float-right pointer hover:bg-gray-300" onClick={e => {
+                    if (props.onClose != undefined) {
                         props.onClose(e);
                     }
-                }} style={{height:"36px",width:"36px"}}>
-                    <i className="fa fa-times text-lg"/>
+                }} style={{ height: "36px", width: "36px" }}>
+                    <i className="fa fa-times text-lg" />
                 </span>
             </div>
         </>
     )
 }
 
-function BottomClose(props){
+function BottomClose(props) {
     return (
         <>
-            <div className={"clearfix "+(props.className != undefined ? props.className : "")}>
-                <Button variant="contained" color="error" className="float-right" onClick={e=>{
-                    if(props.onClose != undefined){
+            <div className={"clearfix " + (props.className != undefined ? props.className : "")}>
+                <Button variant="contained" color="error" className="float-right" onClick={e => {
+                    if (props.onClose != undefined) {
                         props.onClose(e);
                     }
-                }} style={{textTransform:"none"}}>
+                }} style={{ textTransform: "none" }}>
                     Close
                 </Button>
             </div>
@@ -873,41 +1399,41 @@ function BottomClose(props){
     )
 }
 
-function Warning(props){
-    const [open,setOpen] = useState(true);
+function Warning(props) {
+    const [open, setOpen] = useState(true);
 
-    useEffect(()=>{
-        if(!open){
-            if(props.onClose!= undefined){
+    useEffect(() => {
+        if (!open) {
+            if (props.onClose != undefined) {
                 props.onClose();
             }
         }
     }, [open]);
 
     return (
-        <Dialog open={open} onClose={()=>{
+        <Dialog open={open} onClose={() => {
             setOpen(false)
-            if(props.onClose!= undefined){
+            if (props.onClose != undefined) {
                 props.onClose();
             }
         }}>
-            <div className="w3-padding-large" style={{width:"300px"}}>
+            <div className="w3-padding-large" style={{ width: "300px" }}>
                 {props.title != undefined && <font className="w3-large block mb-30 block">{props.title}</font>}
 
                 {props.secondaryText != undefined && <font className="block mb-15">{props.secondaryText}</font>}
 
                 {props.view != undefined && <div className="py-2">{props.view}</div>}
-                
+
                 <div className="py-2 clearfix">
-                    <Button variant="contained" color="error" className="w3-round-xxlarge" sx={{textTransform:"none"}} onClick={event=>{
+                    <Button variant="contained" color="error" className="w3-round-xxlarge" sx={{ textTransform: "none" }} onClick={event => {
                         setOpen(false)
-                        if(props.onClose!= undefined){
+                        if (props.onClose != undefined) {
                             props.onClose();
                         }
                     }}>Close</Button>
                     <span className="float-right">
-                        
-                        {props.action != undefined && <Button sx={{textTransform:"none"}} className="w3-round-xxlarge" variant="contained" onClick={event=>{
+
+                        {props.action != undefined && <Button sx={{ textTransform: "none" }} className="w3-round-xxlarge" variant="contained" onClick={event => {
                             //setLogout(false);
                             props.action.callback();
                         }}>{props.action.text}</Button>}
@@ -917,3 +1443,93 @@ function Warning(props){
         </Dialog>
     )
 }
+
+function post(url, formdata, callback) {
+    var ajax = new XMLHttpRequest();
+
+    var completeHandler = function (event) {
+        const contentType = ajax.getResponseHeader("Content-Type");
+        console.log(contentType);
+        if (contentType == "application/json") {
+            try {
+                callback(JSON.parse(event.target.responseText));
+            }
+            catch (E) {
+                console.error(E.toString());
+                console.error("Failed to parse: " + event.target.responseText);
+            }
+        }
+        else {
+            var response = event.target.responseText;
+            callback(response);
+        }
+    }
+
+    var progressHandler = function (event) {
+        //try{return obj.progress(event.loaded, event.total);}catch(E){}
+    }
+
+    ajax.upload.addEventListener("progress", progressHandler, false);
+    ajax.addEventListener("load", completeHandler, false);
+    //ajax.addEventListener("error", errorHandler, false);
+    //ajax.addEventListener("abort", abortHandler, false);
+    ajax.open("POST", url);
+    ajax.send(formdata);
+}
+
+function DirChooser({ defaultDir, onChange }) {
+    const [selectedDir, setSelectedDir] = useState(defaultDir);
+    const [folders, setFolders] = useState([]);
+
+    const openFolder = (dir) => {
+        $.get("api/", { openDir: encode_to_base64(dir) }, function (response) {
+            //alert(response);
+            try {
+                let res = JSON.parse(response);
+
+                if (res.status) {
+                    setFolders(res.folders.map((r => {
+                        r.checked = false
+                        return r;
+                    })));
+                }
+                else {
+                    alert(res.message)
+                }
+            }
+            catch (E) {
+                alert(E.toString() + response);
+            }
+        })
+    }
+
+    useEffect(() => {
+        openFolder(selectedDir);
+    }, []);
+
+    useEffect(() => {
+        onChange(selectedDir);
+    }, [selectedDir]);
+
+    return (
+        <>
+            <div className="mb-1 px-3 py-2 bg-gray-100 border rounded">{selectedDir}</div>
+            <div className="space-y-1" style={{
+                maxHeight: "350px",
+                overflowY: "auto"
+            }}>
+                {folders.map((row, index) => (
+                    <div
+                        className="px-3 py-1 cursor-pointer hover:bg-gray-100"
+                        onClick={e => setSelectedDir(selectedDir + row.name + "/")}
+                        onDoubleClick={e => {
+                            setSelectedDir(selectedDir + row.name + "/")
+                            openFolder(selectedDir + row.name + "/")
+                        }}
+                    >{row.name}</div>
+                ))}
+            </div>
+        </>
+    )
+}
+//#endregion
